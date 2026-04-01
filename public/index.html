@@ -1,0 +1,1492 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JarvisCode 2.0 - 智能编程助手</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    :root {
+      --bg-primary: #1e1e2e;
+      --bg-secondary: #282839;
+      --bg-tertiary: #313244;
+      --bg-hover: #3b3b4f;
+      --text-primary: #cdd6f4;
+      --text-secondary: #a6adc8;
+      --text-muted: #6c7086;
+      --accent: #89b4fa;
+      --accent-hover: #b4befe;
+      --success: #a6e3a1;
+      --warning: #f9e2af;
+      --error: #f38ba8;
+      --border: #45475a;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      height: 100vh;
+      overflow: hidden;
+    }
+    
+    /* 头部 */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 20px;
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border);
+    }
+    
+    .header h1 {
+      font-size: 18px;
+      color: var(--accent);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .header-info {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+    
+    .header-actions {
+      display: flex;
+      gap: 10px;
+    }
+    
+    /* 按钮 */
+    .btn {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      transition: all 0.2s;
+    }
+    
+    .btn-primary {
+      background: var(--accent);
+      color: var(--bg-primary);
+    }
+    
+    .btn-primary:hover { background: var(--accent-hover); }
+    
+    .btn-secondary {
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+    }
+    
+    .btn-secondary:hover { background: var(--bg-hover); }
+    
+    .btn-danger {
+      background: var(--error);
+      color: var(--bg-primary);
+    }
+    
+    .btn-danger:hover { opacity: 0.9; }
+    
+    .btn-small {
+      padding: 4px 10px;
+      font-size: 12px;
+    }
+    
+    /* 主布局 */
+    .main {
+      display: grid;
+      grid-template-columns: 260px 1fr 380px;
+      height: calc(100vh - 57px);
+    }
+    
+    /* 侧边栏 */
+    .sidebar {
+      background: var(--bg-secondary);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    
+    .sidebar-tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+    }
+    
+    .sidebar-tab {
+      flex: 1;
+      padding: 10px;
+      text-align: center;
+      cursor: pointer;
+      font-size: 12px;
+      color: var(--text-secondary);
+      border-bottom: 2px solid transparent;
+    }
+    
+    .sidebar-tab:hover { background: var(--bg-tertiary); }
+    .sidebar-tab.active { 
+      color: var(--accent); 
+      border-bottom-color: var(--accent);
+    }
+    
+    .sidebar-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px;
+    }
+    
+    /* 文件树 */
+    .tree-item {
+      padding: 6px 10px;
+      cursor: pointer;
+      border-radius: 4px;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .tree-item:hover { background: var(--bg-tertiary); }
+    .tree-item.folder { font-weight: 500; }
+    .tree-item.folder.open > .tree-arrow { transform: rotate(90deg); }
+    
+    .tree-arrow {
+      transition: transform 0.2s;
+      color: var(--text-muted);
+    }
+    
+    .tree-children {
+      padding-left: 16px;
+    }
+    
+    /* 工作区 */
+    .workspace {
+      display: flex;
+      flex-direction: column;
+      background: var(--bg-primary);
+      overflow: hidden;
+    }
+    
+    /* 标签栏 */
+    .tabs {
+      display: flex;
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border);
+      overflow-x: auto;
+    }
+    
+    .tab {
+      padding: 10px 20px;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+    }
+    
+    .tab:hover { background: var(--bg-tertiary); }
+    .tab.active { border-bottom-color: var(--accent); color: var(--accent); }
+    .tab .close { 
+      width: 16px; 
+      height: 16px; 
+      border-radius: 3px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      opacity: 0.5;
+    }
+    .tab .close:hover { opacity: 1; background: var(--bg-hover); }
+    
+    /* 编辑器 */
+    .editor-pane {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 12px;
+      overflow: hidden;
+    }
+    
+    .editor {
+      flex: 1;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+      font-size: 13px;
+      line-height: 1.6;
+      color: var(--text-primary);
+      resize: none;
+      outline: none;
+      overflow: auto;
+      tab-size: 2;
+    }
+    
+    .editor:focus { border-color: var(--accent); }
+    
+    .editor-toolbar {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 8px;
+      align-items: center;
+    }
+    
+    .file-info {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-left: auto;
+    }
+    
+    /* 终端 */
+    .terminal-pane {
+      height: 220px;
+      background: #11111b;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin: 0 12px 12px;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .terminal-header {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--border);
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+    
+    .terminal-content {
+      flex: 1;
+      padding: 12px;
+      font-family: 'Monaco', 'Menlo', monospace;
+      font-size: 12px;
+      overflow-y: auto;
+    }
+    
+    .terminal-line { margin-bottom: 4px; }
+    .terminal-line.error { color: var(--error); }
+    .terminal-line.success { color: var(--success); }
+    .terminal-line.info { color: var(--accent); }
+    
+    .terminal-input {
+      display: flex;
+      padding: 8px 12px;
+      border-top: 1px solid var(--border);
+      gap: 8px;
+    }
+    
+    .terminal-input input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: var(--text-primary);
+      font-family: inherit;
+      font-size: 12px;
+      outline: none;
+    }
+    
+    /* 右侧面板 */
+    .right-panel {
+      background: var(--bg-secondary);
+      border-left: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    
+    .panel-header {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .panel-header h3 {
+      font-size: 14px;
+      color: var(--accent);
+    }
+    
+    .model-select {
+      padding: 6px 10px;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--text-primary);
+      font-size: 12px;
+      cursor: pointer;
+    }
+    
+    .panel-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px;
+    }
+    
+    /* 消息 */
+    .message {
+      margin-bottom: 12px;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    
+    .message.user {
+      background: var(--accent);
+      color: var(--bg-primary);
+    }
+    
+    .message.ai {
+      background: var(--bg-tertiary);
+    }
+    
+    .message.system {
+      background: var(--bg-hover);
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+    
+    .message-role {
+      font-size: 11px;
+      opacity: 0.7;
+      margin-bottom: 4px;
+    }
+    
+    .message-content {
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    
+    .message pre {
+      background: var(--bg-primary);
+      padding: 8px;
+      border-radius: 4px;
+      overflow-x: auto;
+      margin: 8px 0;
+      font-size: 12px;
+    }
+    
+    /* 输入区 */
+    .input-area {
+      padding: 12px;
+      border-top: 1px solid var(--border);
+    }
+    
+    .quick-actions {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+    }
+    
+    .quick-cmd {
+      padding: 4px 10px;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      font-size: 11px;
+      cursor: pointer;
+      color: var(--text-secondary);
+    }
+    
+    .quick-cmd:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    
+    .input-row {
+      display: flex;
+      gap: 8px;
+    }
+    
+    .ai-input {
+      flex: 1;
+      padding: 10px 12px;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text-primary);
+      font-size: 13px;
+      outline: none;
+    }
+    
+    .ai-input:focus { border-color: var(--accent); }
+    
+    /* 设置弹窗 */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    
+    .modal-overlay.show { display: flex; }
+    
+    .modal {
+      background: var(--bg-secondary);
+      border-radius: 12px;
+      width: 600px;
+      max-height: 80vh;
+      overflow-y: auto;
+      padding: 24px;
+    }
+    
+    .modal h2 {
+      margin-bottom: 20px;
+      color: var(--accent);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .form-group {
+      margin-bottom: 16px;
+    }
+    
+    .form-group label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+    
+    .form-group input,
+    .form-group select {
+      width: 100%;
+      padding: 10px 12px;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text-primary);
+      font-size: 13px;
+      outline: none;
+    }
+    
+    .form-group input:focus,
+    .form-group select:focus { border-color: var(--accent); }
+    
+    .form-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+      margin-top: 20px;
+    }
+    
+    /* 任务状态 */
+    .task-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      background: var(--bg-tertiary);
+      border-radius: 12px;
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+    
+    .task-indicator.running {
+      background: var(--accent);
+      color: var(--bg-primary);
+    }
+    
+    .task-indicator .spinner {
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    
+    /* Agent列表 */
+    .agent-list {
+      margin-bottom: 12px;
+    }
+    
+    .agent-item {
+      padding: 8px 12px;
+      background: var(--bg-tertiary);
+      border-radius: 6px;
+      margin-bottom: 8px;
+      font-size: 12px;
+    }
+    
+    .agent-name {
+      font-weight: 500;
+      margin-bottom: 4px;
+    }
+    
+    .agent-info {
+      color: var(--text-secondary);
+      font-size: 11px;
+    }
+    
+    .agent-status {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-right: 6px;
+    }
+    
+    .agent-status.idle { background: var(--text-muted); }
+    .agent-status.running { background: var(--success); }
+    .agent-status.completed { background: var(--accent); }
+    .agent-status.failed { background: var(--error); }
+    
+    /* 进度显示 */
+    .progress {
+      background: var(--bg-tertiary);
+      border-radius: 8px;
+      padding: 12px;
+      margin: 8px 0;
+    }
+    
+    .progress-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 0;
+      font-size: 12px;
+    }
+    
+    .progress-icon { width: 16px; text-align: center; }
+    .progress-icon.spin { animation: spin 1s linear infinite; }
+    
+    /* 记忆标签 */
+    .memory-tag {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 10px;
+      margin-right: 4px;
+    }
+    
+    .memory-tag.user { background: #89b4fa33; color: var(--accent); }
+    .memory-tag.feedback { background: #a6e3a133; color: var(--success); }
+    .memory-tag.project { background: #f9e2af33; color: var(--warning); }
+    .memory-tag.reference { background: #f38ba833; color: var(--error); }
+    
+    /* 工具提示 */
+    .tooltip {
+      position: relative;
+    }
+    
+    .tooltip::after {
+      content: attr(data-tip);
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 4px 8px;
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-size: 11px;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+    }
+    
+    .tooltip:hover::after { opacity: 1; }
+    
+    /* 空状态 */
+    .empty-state {
+      text-align: center;
+      padding: 40px;
+      color: var(--text-muted);
+    }
+    
+    .empty-state-icon {
+      font-size: 48px;
+      margin-bottom: 12px;
+    }
+  </style>
+</head>
+<body>
+  <!-- 头部 -->
+  <div class="header">
+    <h1>🤖 JarvisCode 2.0</h1>
+    <span class="header-info" id="statusInfo">就绪</span>
+    <div class="header-actions">
+      <button class="btn btn-secondary" onclick="showTasks()">📋 任务</button>
+      <button class="btn btn-secondary" onclick="showMemory()">🧠 记忆</button>
+      <button class="btn btn-secondary" onclick="showAgents()">🤖 Agent</button>
+      <button class="btn btn-secondary" onclick="showSettings()">⚙️ 设置</button>
+    </div>
+  </div>
+  
+  <!-- 主布局 -->
+  <div class="main">
+    <!-- 左侧边栏 -->
+    <div class="sidebar">
+      <div class="sidebar-tabs">
+        <div class="sidebar-tab active" onclick="switchSidebarTab('files')">📁 文件</div>
+        <div class="sidebar-tab" onclick="switchSidebarTab('tools')">🔧 工具</div>
+      </div>
+      
+      <!-- 文件浏览器 -->
+      <div class="sidebar-content" id="filesTab">
+        <div class="sidebar-header" style="padding: 8px; display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-size: 12px; color: var(--text-secondary);">工作目录</span>
+          <button class="btn btn-small btn-secondary" onclick="refreshFiles()">🔄</button>
+        </div>
+        <div id="fileTree"></div>
+      </div>
+      
+      <!-- 工具列表 -->
+      <div class="sidebar-content" id="toolsTab" style="display: none;">
+        <div id="toolList"></div>
+      </div>
+    </div>
+    
+    <!-- 中间工作区 -->
+    <div class="workspace">
+      <div class="tabs" id="editorTabs">
+        <div class="tab active" onclick="switchTab('welcome')">
+          <span>👋 欢迎</span>
+        </div>
+      </div>
+      
+      <!-- 欢迎页 -->
+      <div class="editor-pane" id="welcomePane">
+        <div class="empty-state">
+          <div class="empty-state-icon">🤖</div>
+          <h3>JarvisCode 2.0</h3>
+          <p style="margin-top: 8px;">基于 Claude Code 架构的智能编程助手</p>
+          <p style="margin-top: 16px; font-size: 12px;">
+            支持多Agent协作 · 记忆系统 · 14种工具 · 多模型切换
+          </p>
+          <p style="margin-top: 24px; color: var(--accent);">
+            在右侧对话框输入你的需求，开始编程吧！
+          </p>
+        </div>
+      </div>
+      
+      <!-- 编辑器页 -->
+      <div class="editor-pane" id="editorPane" style="display: none;">
+        <div class="editor-toolbar">
+          <button class="btn btn-small btn-secondary" onclick="saveCurrentFile()">💾 保存</button>
+          <button class="btn btn-small btn-secondary" onclick="formatCode()">✨ 格式化</button>
+          <button class="btn btn-small btn-secondary" onclick="runCode()">▶️ 运行</button>
+          <span class="file-info" id="fileInfo"></span>
+        </div>
+        <textarea class="editor" id="codeEditor" placeholder="选择文件开始编辑..."></textarea>
+      </div>
+      
+      <!-- 终端 -->
+      <div class="terminal-pane" id="terminalPane" style="display: none;">
+        <div class="terminal-header">
+          <span>🖥️ 终端</span>
+          <button class="btn btn-small btn-secondary" onclick="clearTerminal()">清空</button>
+        </div>
+        <div class="terminal-content" id="terminalOutput">
+          <div class="terminal-line">$ 等待命令...</div>
+        </div>
+        <div class="terminal-input">
+          <span>$</span>
+          <input type="text" id="terminalInput" placeholder="输入命令..." onkeypress="handleTerminalInput(event)">
+        </div>
+      </div>
+    </div>
+    
+    <!-- 右侧AI对话 -->
+    <div class="right-panel">
+      <div class="panel-header">
+        <h3>💬 AI 对话</h3>
+        <select class="model-select" id="modelSelect" onchange="changeModel()">
+          <option value="minimax">MiniMax</option>
+          <option value="claude">Claude</option>
+          <option value="gpt">GPT-4o</option>
+          <option value="gemini">Gemini</option>
+          <option value="kimi">Kimi</option>
+          <option value="deepseek">DeepSeek</option>
+        </select>
+      </div>
+      
+      <div class="panel-content" id="aiMessages">
+        <div class="message ai">
+          <div class="message-role">JarvisCode</div>
+          <div class="message-content">👋 你好！我是 JarvisCode 2.0，你的智能编程助手。
+
+我可以帮你：
+• 编写和修改代码
+• 执行终端命令
+• 管理文件和项目
+• 调试和修复bug
+• 记忆你的偏好和项目信息
+
+直接告诉我你想做什么，我来帮你完成！</div>
+        </div>
+      </div>
+      
+      <div class="input-area">
+        <div class="quick-actions">
+          <span class="quick-cmd" onclick="sendQuick('写一个Hello World程序')">Hello World</span>
+          <span class="quick-cmd" onclick="sendQuick('创建一个React组件')">React组件</span>
+          <span class="quick-cmd" onclick="sendQuick('解释这段代码的功能')">解释代码</span>
+          <span class="quick-cmd" onclick="sendQuick('优化这段代码性能')">优化代码</span>
+        </div>
+        <div class="input-row">
+          <input type="text" class="ai-input" id="aiInput" placeholder="输入你的需求..." onkeypress="handleKeypress(event)">
+          <button class="btn btn-primary" onclick="sendMessage()">发送</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- 设置弹窗 -->
+  <div class="modal-overlay" id="settingsModal">
+    <div class="modal">
+      <h2>⚙️ 设置</h2>
+      
+      <div class="form-group">
+        <label>API 模型</label>
+        <select id="settingModel">
+          <option value="minimax">MiniMax-M2.7</option>
+          <option value="claude">Claude 3.5 Sonnet</option>
+          <option value="gpt">GPT-4o</option>
+          <option value="gemini">Gemini 2.0 Flash</option>
+          <option value="kimi">Kimi</option>
+          <option value="deepseek">DeepSeek V3</option>
+          <option value="qwen">Qwen Plus</option>
+        </select>
+      </div>
+      
+      <div class="form-group">
+        <label>API Key</label>
+        <input type="password" id="settingApiKey" placeholder="输入你的API Key">
+      </div>
+      
+      <div class="form-group">
+        <label>API URL (可选)</label>
+        <input type="text" id="settingApiUrl" placeholder="https://api.minimax.chat/v1/chat/completions">
+      </div>
+      
+      <div class="form-group">
+        <label>工作目录</label>
+        <input type="text" id="settingWorkspace" placeholder="/home/user/workspace">
+      </div>
+      
+      <h3 style="margin: 20px 0 12px; color: var(--accent);">🤖 Agent 模型配置</h3>
+      
+      <div class="agent-list" id="agentConfigList"></div>
+      
+      <div class="form-actions">
+        <button class="btn btn-secondary" onclick="hideSettings()">取消</button>
+        <button class="btn btn-primary" onclick="saveSettings()">保存</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- 任务弹窗 -->
+  <div class="modal-overlay" id="tasksModal">
+    <div class="modal">
+      <h2>📋 任务管理</h2>
+      <div id="taskList"></div>
+      <div class="form-actions">
+        <button class="btn btn-secondary" onclick="hideTasks()">关闭</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- 记忆弹窗 -->
+  <div class="modal-overlay" id="memoryModal">
+    <div class="modal" style="width: 700px;">
+      <h2>🧠 记忆系统</h2>
+      <div style="display: flex; gap: 8px; margin-bottom: 16px;">
+        <select class="model-select" id="memoryFilter">
+          <option value="">全部</option>
+          <option value="user">用户偏好</option>
+          <option value="feedback">反馈</option>
+          <option value="project">项目</option>
+          <option value="reference">引用</option>
+        </select>
+        <button class="btn btn-primary" onclick="addMemory()">+ 添加记忆</button>
+      </div>
+      <div id="memoryList"></div>
+      <div class="form-actions">
+        <button class="btn btn-secondary" onclick="hideMemory()">关闭</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Agent弹窗 -->
+  <div class="modal-overlay" id="agentsModal">
+    <div class="modal">
+      <h2>🤖 Agent 团队</h2>
+      <div id="agentTeamList"></div>
+      <div class="form-actions">
+        <button class="btn btn-secondary" onclick="hideAgents()">关闭</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ==================== 状态 ====================
+    let config = {
+      globalModel: 'minimax',
+      globalApiKey: '',
+      globalApiUrl: '',
+      workspace: '/home/andy/workspace',
+      agents: {}
+    }
+    let currentFile = null
+    let openFiles = new Map()
+    
+    // ==================== 初始化 ====================
+    async function init() {
+      await loadConfig()
+      refreshFiles()
+      loadTools()
+    }
+    
+    async function loadConfig() {
+      try {
+        const res = await fetch('/api/config')
+        const data = await res.json()
+        config = { ...config, ...data }
+        
+        document.getElementById('modelSelect').value = config.globalModel
+        document.getElementById('settingModel').value = config.globalModel
+        document.getElementById('settingApiKey').value = config.globalApiKey || ''
+        document.getElementById('settingApiUrl').value = config.globalApiUrl || ''
+        document.getElementById('settingWorkspace').value = config.workspace
+        
+        updateStatus(`模型: ${config.globalModel}`)
+      } catch (e) {
+        console.error('加载配置失败', e)
+      }
+    }
+    
+    function updateStatus(text) {
+      document.getElementById('statusInfo').textContent = text
+    }
+    
+    // ==================== 文件操作 ====================
+    async function refreshFiles() {
+      try {
+        const res = await fetch(`/api/files?path=${encodeURIComponent(config.workspace)}`)
+        const tree = await res.json()
+        renderFileTree(tree, 'fileTree')
+      } catch (e) {
+        document.getElementById('fileTree').innerHTML = '<div style="padding: 20px; color: var(--error);">加载失败</div>'
+      }
+    }
+    
+    function renderFileTree(node, elementId) {
+      const el = document.getElementById(elementId)
+      if (!node.children) {
+        el.innerHTML = `<div style="padding: 20px; color: var(--text-muted);">${node.error || '空目录'}</div>`
+        return
+      }
+      
+      el.innerHTML = node.children.map(item => {
+        if (item.type === 'folder') {
+          return `
+            <div class="tree-item folder" onclick="toggleFolder(this, '${item.path}')">
+              <span class="tree-arrow">▶</span>
+              <span>📁</span>
+              <span>${item.name}</span>
+            </div>
+            <div class="tree-children" id="folder_${btoa(item.path).replace(/=/g, '')}" style="display: none;"></div>
+          `
+        } else {
+          return `
+            <div class="tree-item" onclick="openFile('${item.path}')">
+              <span style="width: 20px;"></span>
+              <span>📄</span>
+              <span>${item.name}</span>
+            </div>
+          `
+        }
+      }).join('')
+      
+      // 加载子目录
+      node.children.filter(c => c.type === 'folder').forEach(folder => {
+        const childEl = document.getElementById(`folder_${btoa(folder.path).replace(/=/g, '')}`)
+        if (childEl && folder.children) {
+          childEl.innerHTML = folder.children.map(item => {
+            if (item.type === 'folder') {
+              return `
+                <div class="tree-item folder" onclick="toggleFolder(event, '${item.path}')">
+                  <span class="tree-arrow">▶</span>
+                  <span>📁</span>
+                  <span>${item.name}</span>
+                </div>
+                <div class="tree-children" id="folder_${btoa(item.path).replace(/=/g, '')}" style="display: none;"></div>
+              `
+            } else {
+              return `
+                <div class="tree-item" onclick="openFile('${item.path}')">
+                  <span style="width: 20px;"></span>
+                  <span>📄</span>
+                  <span>${item.name}</span>
+                </div>
+              `
+            }
+          }).join('')
+        }
+      })
+    }
+    
+    async function toggleFolder(event, path) {
+      event.stopPropagation()
+      const el = event.currentTarget
+      const arrow = el.querySelector('.tree-arrow')
+      const childId = `folder_${btoa(path).replace(/=/g, '')}`
+      const childEl = document.getElementById(childId)
+      
+      if (childEl.style.display === 'none') {
+        childEl.style.display = 'block'
+        arrow.textContent = '▼'
+        el.classList.add('open')
+      } else {
+        childEl.style.display = 'none'
+        arrow.textContent = '▶'
+        el.classList.remove('open')
+      }
+    }
+    
+    async function openFile(path) {
+      try {
+        const res = await fetch(`/api/read?path=${encodeURIComponent(path)}`)
+        const data = await res.json()
+        
+        if (data.error) {
+          alert('读取失败: ' + data.error)
+          return
+        }
+        
+        currentFile = path
+        document.getElementById('codeEditor').value = data.content
+        document.getElementById('fileInfo').textContent = path.split('/').pop()
+        
+        // 切换到编辑器
+        switchTab('editor')
+        document.getElementById('welcomePane').style.display = 'none'
+        document.getElementById('editorPane').style.display = 'flex'
+        
+        // 添加标签
+        addEditorTab(path.split('/').pop(), path)
+      } catch (e) {
+        alert('读取失败: ' + e.message)
+      }
+    }
+    
+    function addEditorTab(name, path) {
+      const tabs = document.getElementById('editorTabs')
+      const existing = tabs.querySelector(`[data-path="${path}"]`)
+      if (existing) {
+        tabs.querySelectorAll('.tab').forEach(t => t.classList.remove('active'))
+        existing.classList.add('active')
+        return
+      }
+      
+      const tab = document.createElement('div')
+      tab.className = 'tab active'
+      tab.dataset.path = path
+      tab.innerHTML = `
+        <span>📄</span>
+        <span>${name}</span>
+        <span class="close" onclick="closeTab(event, '${path}')">×</span>
+      `
+      tab.onclick = () => switchToFile(path)
+      tabs.appendChild(tab)
+      
+      tabs.querySelectorAll('.tab').forEach(t => t.classList.remove('active'))
+      tab.classList.add('active')
+    }
+    
+    function closeTab(event, path) {
+      event.stopPropagation()
+      openFiles.delete(path)
+      
+      const tab = document.querySelector(`[data-path="${path}"]`)
+      if (tab) tab.remove()
+      
+      if (currentFile === path) {
+        const remaining = document.querySelector('.tab[data-path]')
+        if (remaining) {
+          switchToFile(remaining.dataset.path)
+        } else {
+          currentFile = null
+          document.getElementById('welcomePane').style.display = 'flex'
+          document.getElementById('editorPane').style.display = 'none'
+        }
+      }
+    }
+    
+    function switchToFile(path) {
+      const tab = document.querySelector(`[data-path="${path}"]`)
+      if (tab) {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'))
+        tab.classList.add('active')
+        openFile(path)
+      }
+    }
+    
+    async function saveCurrentFile() {
+      if (!currentFile) return
+      
+      const content = document.getElementById('codeEditor').value
+      try {
+        const res = await fetch('/api/write', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ path: currentFile, content })
+        })
+        const data = await res.json()
+        
+        if (data.success) {
+          addTerminalLine(`已保存: ${currentFile}`, 'success')
+        } else {
+          addTerminalLine('保存失败: ' + data.error, 'error')
+        }
+      } catch (e) {
+        addTerminalLine('保存失败: ' + e.message, 'error')
+      }
+    }
+    
+    async function runCode() {
+      if (!currentFile) return
+      
+      const ext = currentFile.split('.').pop()
+      let cmd = ''
+      
+      if (ext === 'js') cmd = `node ${currentFile}`
+      else if (ext === 'py') cmd = `python3 ${currentFile}`
+      else if (ext === 'html') cmd = `open ${currentFile}`
+      else if (ext === 'sh') cmd = `bash ${currentFile}`
+      
+      if (cmd) {
+        executeCommand(cmd)
+      }
+    }
+    
+    // ==================== 终端 ====================
+    function switchTab(tab) {
+      document.getElementById('welcomePane').style.display = tab === 'welcome' ? 'flex' : 'none'
+      document.getElementById('editorPane').style.display = tab === 'editor' ? 'flex' : 'none'
+      document.getElementById('terminalPane').style.display = tab === 'terminal' ? 'flex' : 'none'
+      
+      document.querySelectorAll('.tabs .tab').forEach(t => t.classList.remove('active'))
+      event.target.classList.add('active')
+    }
+    
+    function handleTerminalInput(e) {
+      if (e.key === 'Enter') {
+        const input = document.getElementById('terminalInput')
+        const cmd = input.value.trim()
+        if (cmd) {
+          executeCommand(cmd)
+          input.value = ''
+        }
+      }
+    }
+    
+    async function executeCommand(cmd) {
+      addTerminalLine(`$ ${cmd}`)
+      updateStatus('执行中...')
+      
+      try {
+        const res = await fetch('/api/tasks/shell', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ command: cmd, cwd: config.workspace })
+        })
+        const data = await res.json()
+        
+        if (data.result) {
+          if (data.result.stdout) addTerminalLine(data.result.stdout)
+          if (data.result.stderr) addTerminalLine(data.result.stderr, 'error')
+          if (data.result.code === 0) {
+            addTerminalLine(`完成 (退出码: ${data.result.code})`, 'success')
+          } else {
+            addTerminalLine(`退出码: ${data.result.code}`, 'error')
+          }
+        }
+      } catch (e) {
+        addTerminalLine('执行失败: ' + e.message, 'error')
+      }
+      
+      updateStatus(`模型: ${config.globalModel}`)
+    }
+    
+    function addTerminalLine(text, type = '') {
+      const output = document.getElementById('terminalOutput')
+      const line = document.createElement('div')
+      line.className = 'terminal-line ' + type
+      line.textContent = text
+      output.appendChild(line)
+      output.scrollTop = output.scrollHeight
+    }
+    
+    function clearTerminal() {
+      document.getElementById('terminalOutput').innerHTML = '<div class="terminal-line">$ 已清空</div>'
+    }
+    
+    function formatCode() {
+      // 简单的格式化
+      const editor = document.getElementById('codeEditor')
+      let content = editor.value
+      
+      // 移除尾部空白
+      content = content.trim()
+      
+      // 简单格式化
+      editor.value = content
+    }
+    
+    // ==================== 侧边栏 ====================
+    function switchSidebarTab(tab) {
+      document.querySelectorAll('.sidebar-tab').forEach(t => t.classList.remove('active'))
+      event.target.classList.add('active')
+      
+      document.getElementById('filesTab').style.display = tab === 'files' ? 'block' : 'none'
+      document.getElementById('toolsTab').style.display = tab === 'tools' ? 'block' : 'none'
+    }
+    
+    async function loadTools() {
+      try {
+        const res = await fetch('/api/tools')
+        const tools = await res.json()
+        
+        const html = tools.map(t => `
+          <div class="agent-item">
+            <div class="agent-name">🔧 ${t.name}</div>
+            <div class="agent-info">${t.description}</div>
+          </div>
+        `).join('')
+        
+        document.getElementById('toolList').innerHTML = html
+      } catch (e) {
+        document.getElementById('toolList').innerHTML = '<div style="color: var(--error);">加载失败</div>'
+      }
+    }
+    
+    // ==================== AI 对话 ====================
+    function handleKeypress(e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault()
+        sendMessage()
+      }
+    }
+    
+    function sendQuick(cmd) {
+      document.getElementById('aiInput').value = cmd
+      sendMessage()
+    }
+    
+    async function sendMessage() {
+      const input = document.getElementById('aiInput')
+      const message = input.value.trim()
+      if (!message) return
+      
+      input.value = ''
+      
+      // 添加用户消息
+      addMessage('user', message)
+      
+      // 显示进度
+      const progressEl = addProgress('🤖 分析中...')
+      updateStatus('AI处理中...')
+      
+      try {
+        const res = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message })
+        })
+        
+        const data = await res.json()
+        
+        progressEl.remove()
+        
+        if (data.error) {
+          addMessage('ai', '抱歉发生了错误: ' + data.error)
+        } else {
+          addMessage('ai', data.response)
+          
+          // 如果有任务执行，显示任务通知
+          if (data.tasks && data.tasks.length > 0) {
+            addMessage('system', `📋 已分配 ${data.tasks.length} 个任务`)
+          }
+          
+          // 如果有Agent结果
+          if (data.agentResults) {
+            for (const result of data.agentResults) {
+              if (result.status === 'completed') {
+                addMessage('system', `✅ ${result.agentName} 已完成任务`)
+              } else {
+                addMessage('system', `❌ ${result.agentName} 任务失败: ${result.error}`)
+              }
+            }
+          }
+        }
+      } catch (e) {
+        progressEl.remove()
+        addMessage('ai', '网络错误: ' + e.message)
+      }
+      
+      updateStatus(`模型: ${config.globalModel}`)
+    }
+    
+    function addMessage(role, content) {
+      const messages = document.getElementById('aiMessages')
+      const div = document.createElement('div')
+      div.className = 'message ' + role
+      div.innerHTML = `
+        <div class="message-role">${role === 'user' ? '你' : role === 'system' ? '系统' : 'JarvisCode'}</div>
+        <div class="message-content">${escapeHtml(content)}</div>
+      `
+      messages.appendChild(div)
+      messages.scrollTop = messages.scrollHeight
+    }
+    
+    function addProgress(text) {
+      const messages = document.getElementById('aiMessages')
+      const div = document.createElement('div')
+      div.className = 'progress'
+      div.innerHTML = `
+        <div class="progress-item">
+          <span class="progress-icon spin">⏳</span>
+          <span>${text}</span>
+        </div>
+      `
+      messages.appendChild(div)
+      messages.scrollTop = messages.scrollHeight
+      return div
+    }
+    
+    function escapeHtml(text) {
+      if (!text) return ''
+      return text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/\n/g, '<br>')
+        .replace(/```([\s\S]*?)```/g, '<pre>$1</pre>')
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    }
+    
+    function changeModel() {
+      const model = document.getElementById('modelSelect').value
+      config.globalModel = model
+    }
+    
+    // ==================== 设置 ====================
+    function showSettings() {
+      loadAgentConfigs()
+      document.getElementById('settingsModal').classList.add('show')
+    }
+    
+    function hideSettings() {
+      document.getElementById('settingsModal').classList.remove('show')
+    }
+    
+    async function loadAgentConfigs() {
+      try {
+        const res = await fetch('/api/team')
+        const team = await res.json()
+        
+        const html = team.workers.map(agent => `
+          <div class="agent-item">
+            <div class="agent-name">${agent.name}</div>
+            <div class="agent-info">
+              角色: ${agent.role} | 模型: ${agent.model}
+            </div>
+          </div>
+        `).join('')
+        
+        document.getElementById('agentConfigList').innerHTML = html || '<div style="color: var(--text-muted);">暂无Agent</div>'
+      } catch (e) {
+        document.getElementById('agentConfigList').innerHTML = '<div style="color: var(--error);">加载失败</div>'
+      }
+    }
+    
+    async function saveSettings() {
+      const newConfig = {
+        globalModel: document.getElementById('settingModel').value,
+        globalApiKey: document.getElementById('settingApiKey').value,
+        globalApiUrl: document.getElementById('settingApiUrl').value,
+        workspace: document.getElementById('settingWorkspace').value
+      }
+      
+      try {
+        await fetch('/api/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(newConfig)
+        })
+        
+        config = { ...config, ...newConfig }
+        document.getElementById('modelSelect').value = config.globalModel
+        
+        alert('设置已保存！')
+        hideSettings()
+        refreshFiles()
+      } catch (e) {
+        alert('保存失败: ' + e.message)
+      }
+    }
+    
+    // ==================== 任务 ====================
+    function showTasks() {
+      loadTasks()
+      document.getElementById('tasksModal').classList.add('show')
+    }
+    
+    function hideTasks() {
+      document.getElementById('tasksModal').classList.remove('show')
+    }
+    
+    async function loadTasks() {
+      try {
+        const res = await fetch('/api/tasks')
+        const tasks = await res.json()
+        
+        const html = tasks.map(task => `
+          <div class="agent-item">
+            <div class="agent-name">
+              <span class="agent-status ${task.status}"></span>
+              ${task.type} - ${task.status}
+            </div>
+            <div class="agent-info">${task.description || task.command || '任务'}</div>
+          </div>
+        `).join('')
+        
+        document.getElementById('taskList').innerHTML = html || '<div style="color: var(--text-muted);">暂无任务</div>'
+      } catch (e) {
+        document.getElementById('taskList').innerHTML = '<div style="color: var(--error);">加载失败</div>'
+      }
+    }
+    
+    // ==================== 记忆 ====================
+    function showMemory() {
+      loadMemory()
+      document.getElementById('memoryModal').classList.add('show')
+    }
+    
+    function hideMemory() {
+      document.getElementById('memoryModal').classList.remove('show')
+    }
+    
+    async function loadMemory() {
+      try {
+        const type = document.getElementById('memoryFilter').value
+        const url = '/api/memory' + (type ? `?type=${type}` : '')
+        const res = await fetch(url)
+        const memories = await res.json()
+        
+        const html = memories.map(mem => `
+          <div class="agent-item">
+            <div class="agent-name">
+              <span class="memory-tag ${mem.type}">${mem.type}</span>
+              ${mem.name}
+            </div>
+            <div class="agent-info">${mem.description || mem.content.substring(0, 100)}</div>
+          </div>
+        `).join('')
+        
+        document.getElementById('memoryList').innerHTML = html || '<div style="color: var(--text-muted);">暂无记忆</div>'
+      } catch (e) {
+        document.getElementById('memoryList').innerHTML = '<div style="color: var(--error);">加载失败</div>'
+      }
+    }
+    
+    async function addMemory() {
+      const type = prompt('记忆类型 (user/feedback/project/reference):')
+      if (!type) return
+      
+      const name = prompt('记忆名称:')
+      if (!name) return
+      
+      const content = prompt('记忆内容:')
+      if (!content) return
+      
+      try {
+        await fetch('/api/memory', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type, name, description: content, content })
+        })
+        loadMemory()
+      } catch (e) {
+        alert('保存失败: ' + e.message)
+      }
+    }
+    
+    document.getElementById('memoryFilter').onchange = loadMemory
+    
+    // ==================== Agent ====================
+    function showAgents() {
+      loadAgents()
+      document.getElementById('agentsModal').classList.add('show')
+    }
+    
+    function hideAgents() {
+      document.getElementById('agentsModal').classList.remove('show')
+    }
+    
+    async function loadAgents() {
+      try {
+        const res = await fetch('/api/team')
+        const team = await res.json()
+        
+        let html = ''
+        
+        if (team.coordinator) {
+          html += `
+            <div class="agent-item" style="border-left: 3px solid var(--accent);">
+              <div class="agent-name">
+                <span class="agent-status ${team.coordinator.status}"></span>
+                🎯 ${team.coordinator.name} (Coordinator)
+              </div>
+              <div class="agent-info">
+                角色: ${team.coordinator.role} | 工具: ${team.coordinator.tools?.join(', ') || 'N/A'}
+              </div>
+            </div>
+          `
+        }
+        
+        html += team.workers.map(agent => `
+          <div class="agent-item">
+            <div class="agent-name">
+              <span class="agent-status ${agent.status}"></span>
+              🤖 ${agent.name}
+            </div>
+            <div class="agent-info">
+              角色: ${agent.role} | 模型: ${agent.model} | 消息: ${agent.messageCount}
+            </div>
+          </div>
+        `).join('')
+        
+        document.getElementById('agentTeamList').innerHTML = html
+      } catch (e) {
+        document.getElementById('agentTeamList').innerHTML = '<div style="color: var(--error);">加载失败</div>'
+      }
+    }
+    
+    // 启动
+    init()
+  </script>
+</body>
+</html>
